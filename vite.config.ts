@@ -5,19 +5,16 @@ import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-// По умолчанию собираем обычный Node-сервер (подходит для Render, Railway, Docker).
-// Другой таргет можно выбрать переменной окружения, например NITRO_PRESET=vercel.
 process.env.NITRO_PRESET ??= "node-server";
 
-export default defineConfig({
-  server: { port: 3000 },
+export default defineConfig(({ command }) => ({
+  server: { port: 3000, host: true },
   resolve: { dedupe: ["react", "react-dom"] },
   plugins: [
     tsconfigPaths(),
-    // Порядок важен: tanstackStart должен идти раньше viteReact.
     tanstackStart({ server: { entry: "server" } }),
-    nitro(),
+    ...(command === "build" ? [nitro()] : []),
     viteReact(),
     tailwindcss(),
   ],
-});
+}));
