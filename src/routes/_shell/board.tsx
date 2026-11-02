@@ -305,7 +305,7 @@ function Board() {
           )}
         </div>
       )}
-      {mode === "scrum" && !sprint && (
+      {mode === "scrum" && !sprint && sprints.length === 0 && (
         <StatePanel
           variant="empty"
           title="Спринт ещё не запланирован"

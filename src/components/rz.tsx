@@ -135,14 +135,22 @@ export function DueTag({ due }: { due: string | null }) {
 
 // ---------------------------------------------------------------- попапы
 
-export function useDismiss<T extends HTMLElement>(open: boolean, onClose: () => void): RefObject<T | null> {
+export function useDismiss<T extends HTMLElement>(
+  open: boolean,
+  onClose: () => void,
+  skipParent = false,
+): RefObject<T | null> {
   const ref = useRef<T>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) closeRef.current();
+      const target = e.target as Node;
+      if (!ref.current || ref.current.contains(target)) return;
+      // Клик по кнопке-триггеру обрабатывает она сама (переключает), иначе окно закрывалось бы и сразу открывалось.
+      if (skipParent && ref.current.parentElement?.contains(target)) return;
+      closeRef.current();
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeRef.current();
@@ -153,7 +161,7 @@ export function useDismiss<T extends HTMLElement>(open: boolean, onClose: () => 
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, skipParent]);
   return ref;
 }
 
@@ -170,7 +178,7 @@ export function Popover({
   className?: string;
   children: ReactNode;
 }) {
-  const ref = useDismiss<HTMLDivElement>(open, onClose);
+  const ref = useDismiss<HTMLDivElement>(open, onClose, true);
   if (!open) return null;
   return (
     <div

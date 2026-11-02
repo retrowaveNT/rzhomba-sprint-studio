@@ -234,6 +234,11 @@ function Backlog() {
                     }}
                     className="min-h-2"
                   >
+                    {g.list.length === 0 && (
+                      <li className="rounded-lg border border-dashed border-input px-3 py-4 text-center text-xs text-muted-foreground">
+                        В этом эпике пока нет задач. Перетащите сюда задачу.
+                      </li>
+                    )}
                     {g.list.map((t) => {
                       const assignee = members.find((m) => m.id === t.assigneeId);
                       return (

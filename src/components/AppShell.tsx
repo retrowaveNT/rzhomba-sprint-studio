@@ -17,6 +17,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { AiAssistant } from "@/components/AiAssistant";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
@@ -97,7 +98,8 @@ export function AppShell() {
   }, [setSearchOpen, setCreateOpen, setHelpOpen]);
 
   const navItem = (item: (typeof NAV)[number]) => {
-    const active = path.startsWith(item.to);
+    const active =
+      path.startsWith(item.to) || (item.to === "/sprints" && path.startsWith("/sprint-planning"));
     return (
       <Link
         key={item.to}
@@ -148,7 +150,10 @@ export function AppShell() {
 
         {!collapsed && (
           <div className="mb-3 px-4">
-            <button className="flex items-center gap-1 text-xs font-medium">
+            <button
+              onClick={() => toast("Studio team — единственное рабочее пространство")}
+              className="flex items-center gap-1 text-xs font-medium"
+            >
               Studio team <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </button>
             <p className="text-[11px] text-muted-foreground">Pro · {members.length} участников</p>

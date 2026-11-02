@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Check, ChevronDown, Circle, CircleDot } from "lucide-react";
 import type { ReactNode } from "react";
+import { toast } from "sonner";
 
 import { Logo } from "@/components/rz";
 
@@ -77,9 +78,16 @@ export function AuthLayout({
         </div>
 
         <div className="flex items-center justify-center gap-6 px-8 py-6 text-xs text-muted-foreground">
-          <button className="hover:text-foreground">Помощь</button>
-          <button className="hover:text-foreground">Конфиденциальность</button>
-          <button className="inline-flex items-center gap-1 hover:text-foreground">
+          <button className="hover:text-foreground" onClick={() => toast("Справка пока недоступна")}>
+            Помощь
+          </button>
+          <button className="hover:text-foreground" onClick={() => toast("Политика конфиденциальности пока недоступна")}>
+            Конфиденциальность
+          </button>
+          <button
+            className="inline-flex items-center gap-1 hover:text-foreground"
+            onClick={() => toast("Пока доступен только русский язык")}
+          >
             Русский <ChevronDown className="h-3 w-3" />
           </button>
         </div>

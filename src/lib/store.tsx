@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
@@ -674,6 +675,17 @@ export function useStore() {
 export type ThemeChoice = "light" | "dark" | "system";
 export const THEME_STORAGE_KEY = "rzhomba-theme";
 
+let themeValue: ThemeChoice = "light";
+let themeLoaded = false;
+const themeListeners = new Set<() => void>();
+const emitTheme = () => themeListeners.forEach((l) => l());
+const subscribeTheme = (l: () => void) => {
+  themeListeners.add(l);
+  return () => {
+    themeListeners.delete(l);
+  };
+};
+
 function applyTheme(choice: ThemeChoice) {
   const dark =
     choice === "dark" ||
@@ -681,13 +693,23 @@ function applyTheme(choice: ThemeChoice) {
   document.documentElement.classList.toggle("dark", dark);
 }
 
+/** Тема хранится в одном общем месте, поэтому меню профиля и настройки всегда согласованы. */
 export function useTheme() {
-  const [theme, setThemeState] = useState<ThemeChoice>("light");
+  const theme = useSyncExternalStore(
+    subscribeTheme,
+    () => themeValue,
+    () => "light" as ThemeChoice,
+  );
 
   useEffect(() => {
+    if (themeLoaded) return;
+    themeLoaded = true;
     try {
       const saved = localStorage.getItem(THEME_STORAGE_KEY);
-      if (saved === "light" || saved === "dark" || saved === "system") setThemeState(saved);
+      if ((saved === "light" || saved === "dark" || saved === "system") && saved !== themeValue) {
+        themeValue = saved;
+        emitTheme();
+      }
     } catch {
       // ignore
     }
@@ -702,8 +724,9 @@ export function useTheme() {
   }, [theme]);
 
   const setTheme = useCallback((next: ThemeChoice) => {
-    setThemeState(next);
+    themeValue = next;
     applyTheme(next);
+    emitTheme();
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {

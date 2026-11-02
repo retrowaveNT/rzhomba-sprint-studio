@@ -1,6 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { AuthLayout, GoogleButton, OrDivider } from "@/components/AuthLayout";
 import { StatePanel } from "@/components/rz";
@@ -129,13 +130,13 @@ function SignupPage() {
         </button>
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           Создавая аккаунт, вы принимаете{" "}
-          <Link to="/signup" className="underline">
+          <button type="button" className="underline" onClick={() => toast("Условия использования пока недоступны")}>
             Условия использования
-          </Link>{" "}
+          </button>{" "}
           и{" "}
-          <Link to="/signup" className="underline">
+          <button type="button" className="underline" onClick={() => toast("Политика конфиденциальности пока недоступна")}>
             Политику конфиденциальности
-          </Link>
+          </button>
           .
         </p>
       </form>

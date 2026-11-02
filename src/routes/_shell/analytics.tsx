@@ -3,7 +3,7 @@ import { Calendar, Download, Repeat, User } from "lucide-react";
 import { useState } from "react";
 
 import { Burndown } from "@/components/Burndown";
-import { Avatar, FilterSelect, ProgressBar } from "@/components/rz";
+import { Avatar, FilterSelect, Popover, ProgressBar } from "@/components/rz";
 import { fmtRangeYear, SNAPSHOT, SNAPSHOT_LABEL, useStore, type Task } from "@/lib/store";
 import { plural } from "@/lib/utils";
 
@@ -24,11 +24,15 @@ function Analytics() {
   const defaultSprint = sprints.find((s) => s.state === "active")?.id ?? sprints[0]?.id ?? "all";
   const [picked, setPicked] = useState<string | null>(null);
   const [people, setPeople] = useState<string[]>([]);
+  const [range, setRange] = useState<{ from: string; to: string } | null>(null);
+  const [calOpen, setCalOpen] = useState(false);
 
   // Если выбранного спринта нет (удалён, другой проект) — берём спринт по умолчанию.
   const sprintId = picked === "all" || sprints.some((s) => s.id === picked) ? (picked as string) : defaultSprint;
   const sprint = sprints.find((s) => s.id === sprintId) ?? null;
-  const all = sprintId === "all" ? tasks : tasks.filter((t) => t.sprintId === sprintId);
+  const inSprint = sprintId === "all" ? tasks : tasks.filter((t) => t.sprintId === sprintId);
+  // Диапазон дат скрывает задачи со сроком вне диапазона; задачи без срока остаются.
+  const all = range ? inSprint.filter((t) => !t.due || (t.due >= range.from && t.due <= range.to)) : inSprint;
   const list = people.length ? all.filter((t) => people.includes(t.assigneeId)) : all;
   const doneIds = new Set(columns.filter((c) => c.type === "done").map((c) => c.id));
   const pts = (l: Task[]) => l.reduce((a, t) => a + t.points, 0);
@@ -101,19 +105,74 @@ function Analytics() {
             { value: "all", label: "Весь проект (все задачи)" },
           ]}
           value={[sprintId]}
-          onChange={(v) => setPicked(v[0] ?? null)}
+          onChange={(v) => {
+            setPicked(v[0] ?? null);
+            setRange(null);
+          }}
         />
-        {sprint ? (
-          <span className="btn btn-secondary cursor-default">
+        <div className="relative">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            aria-expanded={calOpen || range !== null}
+            onClick={() => setCalOpen((o) => !o)}
+          >
             <Calendar className="h-3.5 w-3.5" />
-            {fmtRangeYear(sprint.start, sprint.end)}
-          </span>
-        ) : (
-          <span className="btn btn-secondary cursor-default">
-            <Calendar className="h-3.5 w-3.5" />
-            Все даты
-          </span>
-        )}
+            {range
+              ? fmtRangeYear(range.from, range.to)
+              : sprint
+                ? fmtRangeYear(sprint.start, sprint.end)
+                : "Все даты"}
+          </button>
+          <Popover open={calOpen} onClose={() => setCalOpen(false)} className="w-72 p-4">
+            <p className="mb-3 text-[13px] font-semibold">Период по срокам задач</p>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-xs font-medium">
+                <span className="mb-1 block">С</span>
+                <input
+                  type="date"
+                  className="field"
+                  value={range?.from ?? sprint?.start ?? ""}
+                  onChange={(e) =>
+                    setRange({ from: e.target.value, to: range?.to ?? sprint?.end ?? e.target.value })
+                  }
+                />
+              </label>
+              <label className="block text-xs font-medium">
+                <span className="mb-1 block">По</span>
+                <input
+                  type="date"
+                  className="field"
+                  value={range?.to ?? sprint?.end ?? ""}
+                  onChange={(e) =>
+                    setRange({ from: range?.from ?? sprint?.start ?? e.target.value, to: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+            {range && range.to < range.from && (
+              <p className="mt-2 text-xs text-destructive">Конец периода раньше начала</p>
+            )}
+            <p className="mt-3 text-[11px] text-muted-foreground">
+              Скрываются задачи со сроком вне периода. Задачи без срока остаются.
+            </p>
+            <div className="mt-3 flex justify-between">
+              <button
+                className="link text-xs"
+                disabled={!range}
+                onClick={() => {
+                  setRange(null);
+                  setCalOpen(false);
+                }}
+              >
+                Сбросить
+              </button>
+              <button className="btn btn-primary px-3 py-1" onClick={() => setCalOpen(false)}>
+                Готово
+              </button>
+            </div>
+          </Popover>
+        </div>
         <FilterSelect
           label="Все участники"
           icon={User}
