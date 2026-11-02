@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Tag, User, Repeat, SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -95,10 +95,14 @@ function QuickAdd({ status }: { status: string }) {
   const { addTask, activeSprint, mode } = useStore();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
+  const finished = useRef(false);
   if (!open) {
     return (
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          finished.current = false;
+          setOpen(true);
+        }}
         className="flex items-center gap-1.5 px-1 py-1.5 text-xs text-muted-foreground hover:text-foreground"
       >
         <Plus className="h-3 w-3" />
@@ -107,6 +111,8 @@ function QuickAdd({ status }: { status: string }) {
     );
   }
   const submit = () => {
+    if (finished.current) return;
+    finished.current = true;
     if (title.trim()) {
       addTask({
         title,
@@ -126,6 +132,7 @@ function QuickAdd({ status }: { status: string }) {
       onKeyDown={(e) => {
         if (e.key === "Enter") submit();
         if (e.key === "Escape") {
+          finished.current = true;
           setTitle("");
           setOpen(false);
         }

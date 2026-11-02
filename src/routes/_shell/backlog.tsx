@@ -54,7 +54,7 @@ function Backlog() {
   const [grouped, setGrouped] = useState(true);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ notif: true });
   const [quick, setQuick] = useState("");
-  const [quickEpic, setQuickEpic] = useState("");
+  const [quickEpic, setQuickEpic] = useState<string | null>(null);
   const [epicDialog, setEpicDialog] = useState(false);
   const [epicName, setEpicName] = useState("");
   const [dragId, setDragId] = useState<string | null>(null);
@@ -80,7 +80,7 @@ function Backlog() {
 
   const submitQuick = () => {
     if (!quick.trim()) return;
-    addTask({ title: quick, epicId: quickEpic || epics[0]?.id || null });
+    addTask({ title: quick, epicId: (quickEpic ?? epics[0]?.id ?? "") || null });
     setQuick("");
   };
 
@@ -151,7 +151,7 @@ function Backlog() {
         />
         <select
           aria-label="Эпик новой задачи"
-          value={quickEpic || epics[0]?.id || ""}
+          value={quickEpic ?? epics[0]?.id ?? ""}
           onChange={(e) => setQuickEpic(e.target.value)}
           className="rounded bg-transparent text-xs text-muted-foreground outline-none"
         >

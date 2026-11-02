@@ -21,12 +21,14 @@ export const Route = createFileRoute("/_shell/analytics")({
 
 function Analytics() {
   const { tasks, sprints, columns, members, project } = useStore();
-  const defaultSprint = sprints.find((s) => s.state === "active")?.id ?? sprints[0]?.id ?? "";
-  const [sprintId, setSprintId] = useState(defaultSprint);
+  const defaultSprint = sprints.find((s) => s.state === "active")?.id ?? sprints[0]?.id ?? "all";
+  const [picked, setPicked] = useState<string | null>(null);
   const [people, setPeople] = useState<string[]>([]);
 
+  // Если выбранного спринта нет (удалён, другой проект) — берём спринт по умолчанию.
+  const sprintId = picked === "all" || sprints.some((s) => s.id === picked) ? (picked as string) : defaultSprint;
   const sprint = sprints.find((s) => s.id === sprintId) ?? null;
-  const all = tasks.filter((t) => t.sprintId === sprintId);
+  const all = sprintId === "all" ? tasks : tasks.filter((t) => t.sprintId === sprintId);
   const list = people.length ? all.filter((t) => people.includes(t.assigneeId)) : all;
   const doneIds = new Set(columns.filter((c) => c.type === "done").map((c) => c.id));
   const pts = (l: Task[]) => l.reduce((a, t) => a + t.points, 0);
@@ -67,7 +69,7 @@ function Analytics() {
     const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${project.key}-${sprint?.name ?? "report"}.csv`;
+    a.download = `${project.key}-${sprint?.name ?? "all"}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -94,14 +96,22 @@ function Analytics() {
           label="Спринт"
           icon={Repeat}
           single
-          options={sprints.map((s) => ({ value: s.id, label: s.name }))}
+          options={[
+            ...sprints.map((s) => ({ value: s.id, label: s.name })),
+            { value: "all", label: "Весь проект (все задачи)" },
+          ]}
           value={[sprintId]}
-          onChange={(v) => setSprintId(v[0] ?? defaultSprint)}
+          onChange={(v) => setPicked(v[0] ?? null)}
         />
-        {sprint && (
+        {sprint ? (
           <span className="btn btn-secondary cursor-default">
             <Calendar className="h-3.5 w-3.5" />
             {fmtRangeYear(sprint.start, sprint.end)}
+          </span>
+        ) : (
+          <span className="btn btn-secondary cursor-default">
+            <Calendar className="h-3.5 w-3.5" />
+            Все даты
           </span>
         )}
         <FilterSelect
@@ -163,7 +173,11 @@ function Analytics() {
               remaining={sprint.state === "active" ? pts(open) : undefined}
               height={190}
             />
-          ) : null}
+          ) : (
+            <p className="py-10 text-center text-xs text-muted-foreground">
+              Burndown строится для одного спринта. Выберите спринт в фильтре.
+            </p>
+          )}
           <p className="mt-1 text-[11px] text-muted-foreground">
             Схема динамики · промежуточные точки иллюстративные. Итог среза: {pts(done)} / {pts(list)} SP.
           </p>
